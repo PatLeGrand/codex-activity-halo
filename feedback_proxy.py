@@ -60,6 +60,9 @@ class Proxy:
                 raise RuntimeError(response['error'])
             if item['cancel'].wait(response.get('wait_ms', 0) / 1000):
                 raise RuntimeError('cancelled during the two-second warning')
+            readiness = feedback('ready', item['call'])
+            if readiness.get('error'):
+                raise RuntimeError(readiness['error'])
             with self.lock:
                 if item['cancel'].is_set():
                     raise RuntimeError('cancelled before dispatch')

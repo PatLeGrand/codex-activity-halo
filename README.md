@@ -94,3 +94,51 @@ cet anneau. Le compagnon ne masque jamais le curseur natif et ne capture aucune
 entrée clavier.
 
 Tests additionnels : `python3 -m unittest -v test_feedback.py test_proxy.py`.
+
+## Reprise humaine (v0.3 — installation système requise)
+
+Le détecteur lit les événements physiques des claviers, souris et pavés tactiles,
+puis ne transmet que des booléens d’activité et de touche/bouton maintenu. Aucun
+code de touche, texte ou mouvement détaillé n’est envoyé ou enregistré. Les
+périphériques virtuels sans bus physique sont exclus, afin que les entrées EIS
+de Codex ne provoquent pas elles-mêmes une pause.
+
+Une unité système ouvre les périphériques en lecture seule, puis abandonne
+ses privilèges avant de traiter les événements. Son script installé appartient
+à root ; l’utilisateur n’est pas ajouté au groupe `input`. Le service est lié
+au gestionnaire de session de l’utilisateur. Si un périphérique est ajouté ou
+retiré, il redémarre pour actualiser sa couverture.
+
+Installation, depuis le dossier contenant ces scripts :
+
+```bash
+sudo /usr/bin/python3 -I /chemin/install_input_monitor.py
+```
+
+L’installation requiert une authentification administrateur locale. Le script
+installe uniquement `/usr/local/libexec/codex-input-activity/monitor_helper.py`
+et `/etc/systemd/system/codex-input-activity-UID.service`.
+
+La nouvelle version du compagnon doit ensuite être activée et le contrôle
+redémarré. L’ancienne version est conservée pendant cette préparation. Le
+contrôle de v0.3 refuse de démarrer si aucun signal récent du détecteur n’est
+reçu ou si la couverture clavier/souris est incomplète.
+
+Pendant une session, une activité physique crée immédiatement le signal
+coopératif natif `computer-use-mcp-takeover` et affiche une indication orange.
+Une seconde vérification a lieu à la fin du compte à rebours, avant d’envoyer
+l’appel au contrôleur. La pause reste verrouillée jusqu’à « Reprendre le
+contrôle Codex » dans le menu de l’icône. Mir­sella conserve aussi son délai de
+sécurité natif de 60 secondes après suppression du signal ; la reprise n’est
+pas une remise en mouvement immédiate.
+
+Arrêter le détecteur :
+
+```bash
+sudo systemctl disable --now codex-input-activity-UID.service
+```
+
+Le test de bout en bout avec des entrées physiques réelles doit être effectué
+après l’installation. Les tests automatisés utilisent des événements simulés. Le test Qt peut être
+relancé avec `python3 verify_takeover_ipc.py`, hors d’un sandbox interdisant les
+sockets Unix locaux.

@@ -53,6 +53,25 @@ class ProxyTests(unittest.TestCase):
         self.assertEqual(child.stdin.getvalue(), '')
         self.assertTrue(json.loads(output[0])['result']['isError'])
 
+    def test_physical_takeover_during_warning_blocks_dispatch(self):
+        child = SimpleNamespace(stdin=io.StringIO())
+        proxy = Proxy(child)
+        output = []
+        proxy.output = output.append
+        message = {'id': 1, 'method': 'tools/call', 'params': {'name': 'dispatch'}}
+        def fake(op, call):
+            if op == 'begin':
+                return {'wait_ms': 0}
+            if op == 'ready':
+                return {'error': 'physical activity detected'}
+            return {'ok': True}
+        with patch('feedback_proxy.feedback', fake):
+            proxy.handle(message, json.dumps(message) + '\n')
+            for worker in proxy.workers:
+                worker.join(1)
+        self.assertEqual(child.stdin.getvalue(), '')
+        self.assertIn('physical activity', json.loads(output[0])['result']['content'][0]['text'])
+
 
 if __name__ == '__main__':
     unittest.main()

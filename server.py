@@ -37,7 +37,7 @@ def main():
         result, error = {}, None
         if method == "initialize":
             result = {"protocolVersion": message.get("params", {}).get("protocolVersion", "2024-11-05"),
-                      "capabilities": {"tools": {}}, "serverInfo": {"name": "activity-halo", "version": "0.2.0"}}
+                      "capabilities": {"tools": {}}, "serverInfo": {"name": "activity-halo", "version": "0.3.0"}}
         elif method == "tools/list":
             result = {"tools": [
                 {"name": "status", "description": "Read whether the blue desktop activity halo is running.",
