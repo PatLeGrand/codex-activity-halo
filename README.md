@@ -3,7 +3,9 @@
 Plugin compagnon pour mirsella/computer-use-mcp sous KDE Plasma Wayland.
 Un halo bleu transparent apparaît aux quatre coins de chaque écran pendant
 les appels au bureau. Un badge distingue l’observation du contrôle.
-Le halo reste visible 2,5 secondes après chaque appel, puis disparaît.
+Avec le proxy de contrôle, le halo reste visible pendant la session et disparaît
+après huit secondes sans action. La surveillance simple du journal conserve
+une indication de 2,5 secondes après chaque appel.
 
 Il surveille uniquement les métadonnées du journal local de mirsella.
 Il ne lit pas les captures, les frappes ou le contenu des fenêtres.
@@ -61,3 +63,34 @@ python3 overlay.py
 
 Les tests couvrent les appels concurrents, la rotation du journal, les lignes
 partiellement écrites, les anciens appels et les processus interrompus.
+
+## Feedback de contrôle (v0.2)
+
+Un anneau bleu suit le pointeur réel pendant l’activité ; le thème du pointeur
+système reste inchangé. Deux courts carillons WAV locaux annoncent le début et
+la fin. Le premier appel au bureau attend deux secondes après le son de début.
+Les appels espacés de moins de huit secondes forment une session ; le son de
+fin joue huit secondes après la dernière réponse. Une annulation pendant le
+compte à rebours empêche l’appel d’atteindre le contrôleur.
+
+Le proxy `feedback_proxy.py` s’intercale entre Codex et le binaire mirsella.
+Il démarre le compagnon et relaie le protocole MCP. Configurez le serveur
+Computer Use avec `/usr/bin/python3` comme commande et les arguments
+`/chemin/feedback_proxy.py /chemin/computer-use-mcp mcp --compact-tools`.
+Cette intégration est prévue pour notre profil de contrôle de l’écran principal.
+
+Pour les mouvements réels animés, le fork Computer Use doit être compilé avec
+le correctif de `codex/desktop-feedback` et démarré avec
+`COMPUTER_USE_MCP_SMOOTH_POINTER=1`. Il demande la position actuelle au compagnon
+par socket local et vérifie le nom et la géométrie de l’écran contre la région
+EIS autorisée. Si la souris est sur l’autre écran, il refuse le déplacement :
+replacez-la sur l’écran principal. Il refuse aussi si le compagnon ne répond
+pas ; il ne revient pas à un déplacement instantané.
+
+Les déplacements utilisent une interpolation à environ 60 événements par
+seconde. Les clics attendent la fin du trajet. Le rendu de l’anneau est mis à
+jour à environ 30 images par seconde. Les images capturées peuvent contenir
+cet anneau. Le compagnon ne masque jamais le curseur natif et ne capture aucune
+entrée clavier.
+
+Tests additionnels : `python3 -m unittest -v test_feedback.py test_proxy.py`.
