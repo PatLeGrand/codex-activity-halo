@@ -1,6 +1,6 @@
 {
   "name": "activity-halo",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Halo bleu automatique pendant les actions de mirsella sur le bureau KDE.",
   "author": {
     "name": "Patou"
