@@ -1,5 +1,6 @@
 """Session timing shared by the visual indicator and its MCP proxy."""
 import time
+import math
 
 
 class Session:
@@ -34,3 +35,12 @@ class Session:
 
     def countdown(self):
         return max(0, self.armed_at - self.clock()) if self.active else 0
+
+
+def control_caption(paused, countdown):
+    """Keep the actionable button explicit during the warning period."""
+    if paused:
+        return "Reprendre le contrôle Codex"
+    if countdown > 0:
+        return f"Codex commence dans {math.ceil(countdown)} s\nAnnuler le démarrage"
+    return "Arrêter le contrôle Codex"

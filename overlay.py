@@ -14,9 +14,9 @@ from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
 from PySide6.QtCore import Qt, QTimer, QRectF, QPointF, QUrl, QSocketNotifier
 from PySide6.QtGui import QColor, QPainter, QRadialGradient, QFont, QIcon, QPixmap, QCursor, QPen
-from PySide6.QtWidgets import QApplication, QWidget, QSystemTrayIcon, QMenu
+from PySide6.QtWidgets import QApplication, QWidget, QSystemTrayIcon, QMenu, QPushButton
 from activity import Activity, runtime_dir
-from feedback import Session
+from feedback import Session, control_caption
 from takeover_state import Takeover
 from PySide6.QtNetwork import QLocalServer
 from PySide6.QtMultimedia import QSoundEffect
@@ -224,6 +224,26 @@ def main():
         takeover.resume()
         takeover_path.unlink(missing_ok=True)
     resume.triggered.connect(resume_control)
+    control_button = QPushButton()
+    control_button.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint
+                                 | Qt.WindowType.WindowDoesNotAcceptFocus)
+    control_button.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+    control_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    control_button.setWindowTitle("Codex — contrôle du PC")
+    control_button.setFixedSize(320, 64)
+    def position_control():
+        screen = next((s for s in app.screens() if s.name() == "HDMI-A-1"), app.primaryScreen())
+        rect = screen.availableGeometry()
+        control_button.move(rect.right() - control_button.width() - 16, rect.top() + 70)
+    position_control()
+    for screen in app.screens():
+        screen.availableGeometryChanged.connect(lambda *_: position_control())
+    def toggle_control():
+        if takeover.paused:
+            resume_control()
+        else:
+            stop_control()
+    control_button.clicked.connect(toggle_control)
     menu.addSeparator()
     menu.addAction("Quitter l’indicateur", app.quit)
     tray.setContextMenu(menu)
@@ -250,6 +270,10 @@ def main():
         if takeover.paused:
             label = "Vous avez la main — Codex suspendu"
         resume.setEnabled(takeover.paused)
+        control_button.setText(control_caption(takeover.paused, session.countdown()))
+        color = "#c77816" if takeover.paused else "#176bc2"
+        control_button.setStyleSheet(f"QPushButton {{ background: {color}; color: white; font-size: 14px; padding: 6px; border-radius: 8px; }}")
+        control_button.setVisible(takeover.paused or session.active)
         for window in windows.values():
             target = .92 + .08 * math.sin(time.monotonic() * 2) if active else 0
             window.opacity += (target - window.opacity) * .35
@@ -279,6 +303,7 @@ def main():
         app.exec()
     finally:
         (root / "status.json").unlink(missing_ok=True)
+        control_button.close()
         tray.hide()
         server.close()
         QLocalServer.removeServer(socket_path)
