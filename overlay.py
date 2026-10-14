@@ -164,6 +164,9 @@ def main():
                             response = {"x": point.x(), "y": point.y(), "screen": screen.name(),
                                         "position": [geometry.x(), geometry.y()],
                                         "size": [geometry.width(), geometry.height()]}
+                    elif op == "stop":
+                        stop_control()
+                        response = {"ok": True}
                     elif op == "ready":
                         response = {"ok": True} if takeover.allowed() else {"error": f"Desktop call blocked; safety wait remaining: {math.ceil(takeover.remaining())} s"}
                     elif op == "begin":
@@ -214,7 +217,7 @@ def main():
     painter.drawEllipse(4, 4, 24, 24)
     painter.end()
     tray = QSystemTrayIcon(QIcon(icon), app)
-    tray.setToolTip("Codex — halo d’activité mirsella")
+    tray.setToolTip("Codex — arrêt : Ctrl+Alt+Fin")
     menu = QMenu()
     enabled = menu.addAction("Afficher l’indicateur")
     enabled.setCheckable(True)

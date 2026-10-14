@@ -33,7 +33,9 @@ def main():
    sender.sendto(json.dumps(packet(False,False,1,1)).encode(),str(runtime/'activity.sock'))
    time.sleep(.1)
    assert flag.exists() and call('ready').get('error'), 'Stop must stay latched'
-   print('Qt IPC and physical-takeover gating: OK')
+   assert call('stop').get('ok'), 'Global stop must be idempotent'
+   assert flag.exists() and call('begin').get('error')
+   print('Qt IPC, global stop and physical-takeover gating: OK')
   finally:
    try:call('quit')
    except OSError:pass

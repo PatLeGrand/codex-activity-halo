@@ -142,3 +142,10 @@ Le test de bout en bout avec des entrées physiques réelles doit être effectu�
 après l’installation. Les tests automatisés utilisent des événements simulés. Le test Qt peut être
 relancé avec `python3 verify_takeover_ipc.py`, hors d’un sandbox interdisant les
 sockets Unix locaux.
+
+### Arrêt global KDE
+
+`python3 install_stop_shortcut.py` enregistre **Ctrl+Alt+Fin** sans sudo.
+Le raccourci laisse le contrôle suspendu jusqu’à une reprise manuelle.
+Il crée aussi le signal natif si le compagnon est indisponible.
+La combinaison occupée par une autre application est refusée.
