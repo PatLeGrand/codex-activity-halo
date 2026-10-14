@@ -1,0 +1,9 @@
+{
+  "name": "activity-halo",
+  "version": "0.1.0",
+  "description": "Halo bleu automatique pendant les actions de mirsella sur le bureau KDE.",
+  "author": {
+    "name": "Patou"
+  },
+  "license": "MIT"
+}

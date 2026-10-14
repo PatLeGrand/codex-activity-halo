@@ -1,0 +1,17 @@
+{
+  "name": "patou-local",
+  "plugins": [
+    {
+      "name": "activity-halo",
+      "source": {
+        "source": "local",
+        "path": "."
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
