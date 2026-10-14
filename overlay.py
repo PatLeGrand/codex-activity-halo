@@ -22,6 +22,13 @@ from PySide6.QtNetwork import QLocalServer
 from PySide6.QtMultimedia import QSoundEffect
 
 
+ACTION_LABELS = {"Capture de l’écran", "Repérage des fenêtres", "Gestion d’une fenêtre",
+                "Ouverture d’une application", "Attente d’un changement", "Action sur le PC",
+                "Déplacement de la souris", "Clic de souris", "Défilement", "Glisser-déposer",
+                "Action de souris", "Saisie au clavier", "Interaction avec un élément",
+                "Action sur le presse-papiers", "Interaction avec le PC", "Saisie dans un champ", "Collage de texte"}
+
+
 class Halo(QWidget):
     def __init__(self, screen):
         flags = (Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint
@@ -175,7 +182,7 @@ def main():
                         elif sounds["start"].status() != QSoundEffect.Status.Ready:
                             response = {"error": "Start sound is not ready"}
                         else:
-                            fresh, wait_ms = session.begin(str(request.get("call")))
+                            fresh, wait_ms = session.begin(str(request.get("call")), request.get("label") if request.get("label") in ACTION_LABELS else "Action sur le PC")
                             if fresh:
                                 play("start")
                             response = {"wait_ms": wait_ms}
@@ -278,6 +285,8 @@ def main():
         demo_active = time.time() < demo_until
         active = enabled.isChecked() and (active or demo_active)
         label = "Codex — aperçu de l’indicateur" if demo_active else tracker.label
+        if session.active:
+            label = session.action_caption()
         if session.countdown() > 0:
             label = f"Codex commence dans {math.ceil(session.countdown())} s"
         if takeover.paused:
@@ -306,6 +315,7 @@ def main():
                      "screens": len(windows), "updated_at": time.time(), "label": label,
                      "audio": {name: effect.status().name for name, effect in sounds.items()},
                      "chimes_played": plays, "feedback_session": session.active,
+                     "current_action": session.action_caption() if session.active else None,
                      "human_monitor_ready": takeover.ready(), "human_paused": takeover.paused,
                      "human_input_held": takeover.held,
                      "safety_wait_seconds": math.ceil(takeover.remaining())}

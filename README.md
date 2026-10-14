@@ -149,3 +149,10 @@ sockets Unix locaux.
 Le raccourci laisse le contrôle suspendu jusqu’à une reprise manuelle.
 Il crée aussi le signal natif si le compagnon est indisponible.
 La combinaison occupée par une autre application est refusée.
+
+### Action en cours
+
+Le proxy annonce uniquement le type d’opération (capture, clic, déplacement,
+saisie, collage ou attente). Aucun texte saisi, titre de fenêtre ou contenu
+du presse-papiers n’est affiché. Le libellé décrit la commande en cours,
+pas la réussite de son effet dans l’application.

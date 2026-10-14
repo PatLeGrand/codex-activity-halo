@@ -14,7 +14,7 @@ class ProxyTests(unittest.TestCase):
         output = []
         proxy.output = output.append
         began = threading.Event()
-        def fake(op, call):
+        def fake(op, call, label=None):
             if op == 'begin':
                 began.set()
                 return {'wait_ms': 2000}
@@ -59,7 +59,7 @@ class ProxyTests(unittest.TestCase):
         output = []
         proxy.output = output.append
         message = {'id': 1, 'method': 'tools/call', 'params': {'name': 'dispatch'}}
-        def fake(op, call):
+        def fake(op, call, label=None):
             if op == 'begin':
                 return {'wait_ms': 0}
             if op == 'ready':

@@ -7,14 +7,15 @@ import sys
 import threading
 import time
 from activity import runtime_dir
+from action_labels import action_label
 from server import ensure_overlay
 
 
-def feedback(op, call):
+def feedback(op, call, label=None):
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.settimeout(1)
         sock.connect(str(runtime_dir() / 'feedback.sock'))
-        sock.sendall((json.dumps({'op': op, 'call': call}) + '\n').encode())
+        sock.sendall((json.dumps({'op': op, 'call': call, 'label': label}) + '\n').encode())
         return json.loads(sock.makefile('rb').readline(4096))
 
 
@@ -55,7 +56,7 @@ class Proxy:
 
     def prepare(self, message, line, item):
         try:
-            response = feedback('begin', item['call'])
+            response = feedback('begin', item['call'], item['label'])
             if response.get('error'):
                 raise RuntimeError(response['error'])
             if item['cancel'].wait(response.get('wait_ms', 0) / 1000):
@@ -87,7 +88,7 @@ class Proxy:
                     return
         if foreground_request(message):
             key = str(message['id'])
-            item = {'call': f'{os.getpid()}-{key}', 'cancel': threading.Event(), 'sent': False}
+            item = {'call': f'{os.getpid()}-{key}', 'cancel': threading.Event(), 'sent': False, 'label': action_label(message)}
             with self.lock:
                 self.pending[key] = item
             worker = threading.Thread(target=self.prepare, args=(message, line, item), daemon=True)
