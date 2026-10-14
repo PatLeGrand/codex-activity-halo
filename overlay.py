@@ -46,7 +46,7 @@ class Halo(QWidget):
             glow.setColorAt(.28, QColor(33, 124, 255, 120))
             glow.setColorAt(.66, QColor(40, 88, 245, 42))
             glow.setColorAt(1, QColor(40, 88, 245, 0))
-            p.fillRect(self.rect(), glow)
+            p.fillRect(QRectF(x - radius, y - radius, radius * 2, radius * 2).intersected(QRectF(self.rect())), glow)
         p.setFont(QFont("Sans Serif", 10))
         width = p.fontMetrics().horizontalAdvance(self.label) + 60
         badge = QRectF((w - width) / 2, 18, width, 34)
