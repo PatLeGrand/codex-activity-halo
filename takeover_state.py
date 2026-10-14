@@ -9,6 +9,7 @@ class Takeover:
         self.held = False
         self.coverage = False
         self.paused = False
+        self.resume_at = 0
 
     def signal(self, message, controlling):
         if message.get('monitor') != 'codex-input-activity':
@@ -22,6 +23,8 @@ class Takeover:
         self.last_heartbeat = self.clock()
         self.coverage = bool(message.get('keyboard_devices', 0) > 0 and message.get('pointer_devices', 0) > 0)
         self.held = bool(message.get('held'))
+        if self.remaining() > 0 and (message.get('activity') or self.held):
+            self.resume_at = self.clock() + 60
         if controlling and (message.get('activity') or self.held):
             self.paused = True
             return True
@@ -31,8 +34,13 @@ class Takeover:
         return bool(self.coverage and self.last_heartbeat is not None
                     and self.clock() - self.last_heartbeat <= 2)
 
+    def remaining(self):
+        return max(0, self.resume_at - self.clock())
+
     def resume(self):
+        if self.paused:
+            self.resume_at = self.clock() + 60
         self.paused = False
 
     def allowed(self):
-        return self.ready() and not self.paused and not self.held
+        return self.ready() and not self.paused and not self.held and self.remaining() == 0

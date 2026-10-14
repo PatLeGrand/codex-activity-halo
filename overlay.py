@@ -87,11 +87,16 @@ def main():
     takeover = Takeover()
     takeover_path = Path(os.environ.get("XDG_RUNTIME_DIR", str(root.parent))) / "computer-use-mcp-takeover"
     takeover.paused = takeover_path.exists()
+    recovery_path = root / "safety-wait"
+    if recovery_path.exists() and not takeover.paused:
+        takeover.resume_at = takeover.clock() + 60
     def stop_control():
         first = not takeover.paused
         takeover.paused = True
         takeover_path.touch(mode=0o600, exist_ok=True)
         session.active = False
+        takeover.resume_at = 0
+        recovery_path.unlink(missing_ok=True)
         if first:
             play("end")
     activity_path = root / "activity.sock"
@@ -160,10 +165,10 @@ def main():
                                         "position": [geometry.x(), geometry.y()],
                                         "size": [geometry.width(), geometry.height()]}
                     elif op == "ready":
-                        response = {"ok": True} if takeover.allowed() else {"error": "Physical control resumed or monitoring unavailable; desktop call blocked"}
+                        response = {"ok": True} if takeover.allowed() else {"error": f"Desktop call blocked; safety wait remaining: {math.ceil(takeover.remaining())} s"}
                     elif op == "begin":
                         if not takeover.allowed():
-                            response = {"error": "Human takeover monitoring is unavailable, a key is held, or control is paused"}
+                            response = {"error": f"Control unavailable or paused; safety wait remaining: {math.ceil(takeover.remaining())} s"}
                         elif sounds["start"].status() != QSoundEffect.Status.Ready:
                             response = {"error": "Start sound is not ready"}
                         else:
@@ -222,6 +227,7 @@ def main():
     def resume_control():
         session.active = False
         takeover.resume()
+        recovery_path.touch(mode=0o600, exist_ok=True)
         takeover_path.unlink(missing_ok=True)
     resume.triggered.connect(resume_control)
     control_button = QPushButton()
@@ -252,6 +258,10 @@ def main():
     def tick():
         nonlocal ticks
         active = tracker.poll()
+        if takeover.remaining() > 0 and not takeover.ready():
+            takeover.resume_at = takeover.clock() + 60
+        if takeover.remaining() == 0:
+            recovery_path.unlink(missing_ok=True)
         if session.active and not takeover.ready():
             stop_control()
         if session.tick():
@@ -269,11 +279,13 @@ def main():
             label = f"Codex commence dans {math.ceil(session.countdown())} s"
         if takeover.paused:
             label = "Vous avez la main — Codex suspendu"
+        if not takeover.paused and takeover.remaining() > 0:
+            label = f"Attente de sécurité : {math.ceil(takeover.remaining())} s"
         resume.setEnabled(takeover.paused)
-        control_button.setText(control_caption(takeover.paused, session.countdown()))
+        control_button.setText(control_caption(takeover.paused, session.countdown(), takeover.remaining()))
         color = "#c77816" if takeover.paused else "#176bc2"
         control_button.setStyleSheet(f"QPushButton {{ background: {color}; color: white; font-size: 14px; padding: 6px; border-radius: 8px; }}")
-        control_button.setVisible(takeover.paused or session.active)
+        control_button.setVisible(takeover.paused or session.active or takeover.remaining() > 0)
         for window in windows.values():
             target = .92 + .08 * math.sin(time.monotonic() * 2) if active else 0
             window.opacity += (target - window.opacity) * .35
@@ -292,7 +304,8 @@ def main():
                      "audio": {name: effect.status().name for name, effect in sounds.items()},
                      "chimes_played": plays, "feedback_session": session.active,
                      "human_monitor_ready": takeover.ready(), "human_paused": takeover.paused,
-                     "human_input_held": takeover.held}
+                     "human_input_held": takeover.held,
+                     "safety_wait_seconds": math.ceil(takeover.remaining())}
             temp = root / "status.tmp"
             temp.write_text(json.dumps(state))
             temp.replace(root / "status.json")

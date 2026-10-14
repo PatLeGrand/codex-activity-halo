@@ -37,10 +37,12 @@ class Session:
         return max(0, self.armed_at - self.clock()) if self.active else 0
 
 
-def control_caption(paused, countdown):
+def control_caption(paused, countdown, recovery=0):
     """Keep the actionable button explicit during the warning period."""
     if paused:
         return "Reprendre le contrôle Codex"
+    if recovery > 0:
+        return f"Attente de sécurité : {math.ceil(recovery)} s\nAnnuler la reprise"
     if countdown > 0:
         return f"Codex commence dans {math.ceil(countdown)} s\nAnnuler le démarrage"
     return "Arrêter le contrôle Codex"

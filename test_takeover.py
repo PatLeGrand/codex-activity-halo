@@ -36,6 +36,24 @@ class PhysicalActivityTests(unittest.TestCase):
         state.signal(packet(False, False, 1, 1), False)
         self.assertFalse(state.allowed())
         state.resume()
+        self.assertFalse(state.allowed())
+        now[0] += 60
+        state.signal(packet(False, False, 1, 1), False)
+        self.assertTrue(state.allowed())
+
+    def test_activity_resets_safety_wait(self):
+        now = [0.0]
+        state = Takeover(lambda: now[0])
+        state.paused = True
+        state.resume()
+        now[0] = 20
+        state.signal(packet(True, False, 1, 1), False)
+        self.assertEqual(state.remaining(), 60)
+        now[0] = 79
+        state.signal(packet(False, False, 1, 1), False)
+        self.assertFalse(state.allowed())
+        now[0] = 80
+        state.signal(packet(False, False, 1, 1), False)
         self.assertTrue(state.allowed())
 
     def test_dead_helper_or_held_key_blocks_control(self):
