@@ -37,7 +37,7 @@ class PhysicalActivityTests(unittest.TestCase):
         self.assertFalse(state.allowed())
         state.resume()
         self.assertFalse(state.allowed())
-        now[0] += 60
+        now[0] += 5
         state.signal(packet(False, False, 1, 1), False)
         self.assertTrue(state.allowed())
 
@@ -46,13 +46,13 @@ class PhysicalActivityTests(unittest.TestCase):
         state = Takeover(lambda: now[0])
         state.paused = True
         state.resume()
-        now[0] = 20
+        now[0] = 2
         state.signal(packet(True, False, 1, 1), False)
-        self.assertEqual(state.remaining(), 60)
-        now[0] = 79
+        self.assertEqual(state.remaining(), 5)
+        now[0] = 6
         state.signal(packet(False, False, 1, 1), False)
         self.assertFalse(state.allowed())
-        now[0] = 80
+        now[0] = 7
         state.signal(packet(False, False, 1, 1), False)
         self.assertTrue(state.allowed())
 

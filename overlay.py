@@ -89,7 +89,7 @@ def main():
     takeover.paused = takeover_path.exists()
     recovery_path = root / "safety-wait"
     if recovery_path.exists() and not takeover.paused:
-        takeover.resume_at = takeover.clock() + 60
+        takeover.resume_at = takeover.clock() + 5
     def stop_control():
         first = not takeover.paused
         takeover.paused = True
@@ -259,7 +259,7 @@ def main():
         nonlocal ticks
         active = tracker.poll()
         if takeover.remaining() > 0 and not takeover.ready():
-            takeover.resume_at = takeover.clock() + 60
+            takeover.resume_at = takeover.clock() + 5
         if takeover.remaining() == 0:
             recovery_path.unlink(missing_ok=True)
         if session.active and not takeover.ready():

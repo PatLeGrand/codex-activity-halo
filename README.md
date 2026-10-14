@@ -129,7 +129,7 @@ coopératif natif `computer-use-mcp-takeover` et affiche une indication orange.
 Une seconde vérification a lieu à la fin du compte à rebours, avant d’envoyer
 l’appel au contrôleur. La pause reste verrouillée jusqu’à « Reprendre le
 contrôle Codex » dans le menu de l’icône. Mir­sella conserve aussi son délai de
-sécurité natif de 60 secondes après suppression du signal ; la reprise n’est
+sécurité natif de 5 secondes après suppression du signal ; la reprise n’est
 pas une remise en mouvement immédiate.
 
 Arrêter le détecteur :

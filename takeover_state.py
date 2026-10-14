@@ -24,7 +24,7 @@ class Takeover:
         self.coverage = bool(message.get('keyboard_devices', 0) > 0 and message.get('pointer_devices', 0) > 0)
         self.held = bool(message.get('held'))
         if self.remaining() > 0 and (message.get('activity') or self.held):
-            self.resume_at = self.clock() + 60
+            self.resume_at = self.clock() + 5
         if controlling and (message.get('activity') or self.held):
             self.paused = True
             return True
@@ -39,7 +39,7 @@ class Takeover:
 
     def resume(self):
         if self.paused:
-            self.resume_at = self.clock() + 60
+            self.resume_at = self.clock() + 5
         self.paused = False
 
     def allowed(self):
