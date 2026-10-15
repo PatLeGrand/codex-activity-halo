@@ -12,10 +12,13 @@ from server import ensure_overlay
 
 
 def feedback(op, call, label=None):
+    request = {'op': op, 'call': call, 'label': label}
+    if os.environ.get('HALO_AGENT'):
+        request['agent'] = os.environ['HALO_AGENT']
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
         sock.settimeout(1)
         sock.connect(str(runtime_dir() / 'feedback.sock'))
-        sock.sendall((json.dumps({'op': op, 'call': call, 'label': label}) + '\n').encode())
+        sock.sendall((json.dumps(request) + '\n').encode())
         return json.loads(sock.makefile('rb').readline(4096))
 
 

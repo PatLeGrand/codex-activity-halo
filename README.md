@@ -1,11 +1,20 @@
-# Codex Activity Halo
+# Activity Halo — indicateur et garde-fous pour le contrôle d'écran par une IA
 
-Plugin compagnon pour mirsella/computer-use-mcp sous KDE Plasma Wayland.
-Un halo bleu transparent apparaît aux quatre coins de chaque écran pendant
-les appels au bureau. Un badge distingue l’observation du contrôle.
-Avec le proxy de contrôle, le halo reste visible pendant la session et disparaît
-après huit secondes sans action. La surveillance simple du journal conserve
-une indication de 2,5 secondes après chaque appel.
+Compagnon de [mirsella/computer-use-mcp](https://github.com/mirsella/computer-use-mcp)
+sous KDE Plasma Wayland, pour **Claude Code** et **Codex**. Un halo transparent
+apparaît aux quatre coins de chaque écran pendant les appels au bureau, un
+badge distingue l'observation du contrôle, un anneau suit le pointeur, des
+carillons annoncent le début et la fin, et un décompte laisse deux secondes
+pour annuler. Dès que vous touchez le clavier ou la souris, l'agent est
+suspendu. Chaque agent a sa couleur : bleu pour Codex, terracotta pour Claude.
+
+| Guide | Contenu |
+| --- | --- |
+| [docs/INSTALLATION.md](docs/INSTALLATION.md) | Prérequis, installation pas à pas, brancher Claude Code ou Codex, mise à jour, désinstallation |
+| [docs/UTILISATION.md](docs/UTILISATION.md) | Déroulé d'une session, pause et reprise, arrêt d'urgence, variables, dépannage, limites, confidentialité |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Processus, protocole, signal de reprise, ajouter un agent |
+
+Projet non affilié à Anthropic ni à OpenAI. Licence MIT.
 
 Il surveille uniquement les métadonnées du journal local de mirsella.
 Il ne lit pas les captures, les frappes ou le contenu des fenêtres.
@@ -16,7 +25,7 @@ demandé, y compris lorsqu’une action est ensuite refusée.
 
 ## Utilisation
 
-Le serveur MCP lance automatiquement le compagnon. Une icône bleue dans la
+Le serveur MCP lance automatiquement le compagnon. Une icône dans la
 zone de notification permet de prévisualiser, désactiver ou quitter le halo.
 Pour arrêter durablement le lancement automatique, désactiver le plugin
 `activity-halo@patou-local` dans Codex.
@@ -24,7 +33,9 @@ Pour arrêter durablement le lancement automatique, désactiver le plugin
 Le plugin fournit `status` et `preview` (aperçu explicitement étiqueté,
 pendant huit secondes). Il ne contrôle pas le PC.
 
-## Installation
+## Installation du plugin Codex (résumé)
+
+Le guide complet est dans [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 Pré-requis : Python 3, PySide6, KDE avec XWayland et composition activée.
 L’overlay utilise Qt/XWayland avec entrée transparente et sans prise de focus.
@@ -156,3 +167,15 @@ Le proxy annonce uniquement le type d’opération (capture, clic, déplacement,
 saisie, collage ou attente). Aucun texte saisi, titre de fenêtre ou contenu
 du presse-papiers n’est affiché. Le libellé décrit la commande en cours,
 pas la réussite de son effet dans l’application.
+
+## Claude Code
+
+Le même compagnon sert Codex et Claude : chaque proxy annonce son agent
+(`HALO_AGENT=claude`) et l'indicateur adopte son nom et ses couleurs, définis
+dans `theme.py`. Sans cette variable, l'aspect reste celui de Codex. Le jeton
+du portail KDE est lié à l'identité de l'application : Claude doit avoir son
+propre `XDG_STATE_HOME`. Commande d'enregistrement, thèmes et comportements
+observés : voir [INSTALLATION.md](docs/INSTALLATION.md#claude-code) et
+[UTILISATION.md](docs/UTILISATION.md).
+
+Tests : `python3 -m unittest -v test_theme.py`.

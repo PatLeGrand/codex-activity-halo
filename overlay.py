@@ -18,6 +18,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QSystemTrayIcon, QMenu, QPu
 from activity import Activity, runtime_dir
 from feedback import Session, control_caption
 from takeover_state import Takeover
+from theme import THEMES, theme_for
 from PySide6.QtNetwork import QLocalServer
 from PySide6.QtMultimedia import QSoundEffect
 
@@ -38,19 +39,24 @@ class Halo(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        self.setWindowTitle("Codex — indicateur d’activité")
+        self.set_theme(theme_for(None))
         self.setGeometry(screen.geometry())
         screen.geometryChanged.connect(self.setGeometry)
         self.paused = False
         self.opacity = 0.0
-        self.label = "Codex utilise le PC"
+        self.label = ""
+
+    def set_theme(self, theme):
+        self.theme = theme
+        self.setWindowTitle(f"{theme.name} — indicateur d’activité")
 
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setOpacity(self.opacity)
         w, h = self.width(), self.height()
-        blue = QColor(255, 172, 47) if self.paused else QColor(36, 174, 255)
+        theme = self.theme
+        blue = QColor(*(theme.paused if self.paused else theme.accent))
         radius = min(240, w * .2, h * .3)
         for x, y in ((0, 0), (w, 0), (0, h), (w, h)):
             glow = QRadialGradient(QPointF(x, y), radius)
@@ -62,20 +68,20 @@ class Halo(QWidget):
         p.setFont(QFont("Sans Serif", 10))
         width = p.fontMetrics().horizontalAdvance(self.label) + 60
         badge = QRectF((w - width) / 2, 18, width, 34)
-        p.setPen(QColor(67, 156, 255, 190))
-        p.setBrush(QColor(13, 27, 47, 235))
+        p.setPen(QColor(*theme.badge_edge))
+        p.setBrush(QColor(*theme.badge_fill))
         p.drawRoundedRect(badge, 17, 17)
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(62, 173, 255))
+        p.setBrush(QColor(*theme.dot))
         p.drawEllipse(QPointF(badge.left() + 17, badge.center().y()), 4, 4)
-        p.setPen(QColor(233, 244, 255))
+        p.setPen(QColor(*theme.badge_text))
         p.drawText(badge.adjusted(30, 0, -10, 0), Qt.AlignmentFlag.AlignCenter, self.label)
         cursor = self.mapFromGlobal(QCursor.pos())
         if self.rect().contains(cursor):
             p.setPen(QPen(QColor(blue.red(), blue.green(), blue.blue(), 245), 3))
-            p.setBrush(QColor(26, 108, 235, 35))
+            p.setBrush(QColor(*theme.ring_fill))
             p.drawEllipse(QPointF(cursor), 15, 15)
-            p.setPen(QPen(QColor(227, 247, 255, 235), 1))
+            p.setPen(QPen(QColor(*theme.ring_outer), 1))
             p.drawEllipse(QPointF(cursor), 19, 19)
 
 
@@ -92,6 +98,8 @@ def main():
     tracker = Activity(history)
     session = Session()
     takeover = Takeover()
+    # The overlay is shared; the agent behind the latest `begin` sets the look.
+    current = {"agent": os.environ.get("HALO_AGENT") if os.environ.get("HALO_AGENT") in THEMES else "codex"}
     takeover_path = Path(os.environ.get("XDG_RUNTIME_DIR", str(root.parent))) / "computer-use-mcp-takeover"
     takeover.paused = takeover_path.exists()
     recovery_path = root / "safety-wait"
@@ -177,6 +185,8 @@ def main():
                     elif op == "ready":
                         response = {"ok": True} if takeover.allowed() else {"error": f"Desktop call blocked; safety wait remaining: {math.ceil(takeover.remaining())} s"}
                     elif op == "begin":
+                        # Clients that predate the agent field are Codex.
+                        current["agent"] = request["agent"] if request.get("agent") in THEMES else "codex"
                         if not takeover.allowed():
                             response = {"error": f"Control unavailable or paused; safety wait remaining: {math.ceil(takeover.remaining())} s"}
                         elif sounds["start"].status() != QSoundEffect.Status.Ready:
@@ -207,6 +217,7 @@ def main():
     windows = {}
     def add(screen):
         windows[screen] = Halo(screen)
+        windows[screen].set_theme(theme_for(current["agent"]))
     for screen in app.screens():
         add(screen)
     app.screenAdded.connect(add)
@@ -215,16 +226,26 @@ def main():
         if window:
             window.close()
     app.screenRemoved.connect(remove)
-    icon = QPixmap(32, 32)
-    icon.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(icon)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.setBrush(QColor(45, 148, 255))
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.drawEllipse(4, 4, 24, 24)
-    painter.end()
-    tray = QSystemTrayIcon(QIcon(icon), app)
-    tray.setToolTip("Codex — arrêt : Ctrl+Alt+Fin")
+    def tray_icon(theme):
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        color = QColor(*theme.tray)
+        if theme.starburst:
+            # Eight rounded rays around the centre, in the spirit of Claude's spark.
+            painter.setPen(QPen(color, 3.4, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            for step in range(8):
+                angle = step * math.pi / 4
+                painter.drawLine(QPointF(16 + 5 * math.cos(angle), 16 + 5 * math.sin(angle)),
+                                 QPointF(16 + 13 * math.cos(angle), 16 + 13 * math.sin(angle)))
+        else:
+            painter.setBrush(color)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawEllipse(4, 4, 24, 24)
+        painter.end()
+        return QIcon(pixmap)
+    tray = QSystemTrayIcon(tray_icon(theme_for(current["agent"])), app)
     menu = QMenu()
     enabled = menu.addAction("Afficher l’indicateur")
     enabled.setCheckable(True)
@@ -233,7 +254,7 @@ def main():
     def demo():
         (root / "preview.json").write_text(json.dumps({"until": time.time() + 8}))
     preview.triggered.connect(demo)
-    resume = menu.addAction("Reprendre le contrôle Codex")
+    resume = menu.addAction("")
     def resume_control():
         session.active = False
         takeover.resume()
@@ -245,10 +266,9 @@ def main():
                                  | Qt.WindowType.WindowDoesNotAcceptFocus)
     control_button.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
     control_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    control_button.setWindowTitle("Codex — contrôle du PC")
     control_button.setFixedSize(320, 64)
     def position_control():
-        screen = next((s for s in app.screens() if s.name() == "HDMI-A-1"), app.primaryScreen())
+        screen = app.primaryScreen()
         rect = screen.availableGeometry()
         control_button.move(rect.right() - control_button.width() - 16, rect.top() + 70)
     position_control()
@@ -265,8 +285,18 @@ def main():
     tray.setContextMenu(menu)
     tray.show()
     ticks = 0
+    applied = {"agent": None}
     def tick():
         nonlocal ticks
+        theme = theme_for(current["agent"])
+        if applied["agent"] != current["agent"]:
+            applied["agent"] = current["agent"]
+            tray.setIcon(tray_icon(theme))
+            tray.setToolTip(f"{theme.name} — arrêt : Ctrl+Alt+Fin")
+            resume.setText(f"Reprendre le contrôle {theme.name}")
+            control_button.setWindowTitle(f"{theme.name} — contrôle du PC")
+            for window in windows.values():
+                window.set_theme(theme)
         active = tracker.poll()
         if takeover.remaining() > 0 and not takeover.ready():
             takeover.resume_at = takeover.clock() + 5
@@ -284,18 +314,18 @@ def main():
             pass
         demo_active = time.time() < demo_until
         active = enabled.isChecked() and (active or demo_active)
-        label = "Codex — aperçu de l’indicateur" if demo_active else tracker.label
+        label = f"{theme.name} — aperçu de l’indicateur" if demo_active else tracker.label.replace("Codex", theme.name)
         if session.active:
-            label = session.action_caption()
+            label = session.action_caption(theme.name)
         if session.countdown() > 0:
-            label = f"Codex commence dans {math.ceil(session.countdown())} s"
+            label = f"{theme.name} commence dans {math.ceil(session.countdown())} s"
         if takeover.paused:
-            label = "Vous avez la main — Codex suspendu"
+            label = f"Vous avez la main — {theme.name} suspendu"
         if not takeover.paused and takeover.remaining() > 0:
             label = f"Attente de sécurité : {math.ceil(takeover.remaining())} s"
         resume.setEnabled(takeover.paused)
-        control_button.setText(control_caption(takeover.paused, session.countdown(), takeover.remaining()))
-        color = "#c77816" if takeover.paused else "#176bc2"
+        control_button.setText(control_caption(takeover.paused, session.countdown(), takeover.remaining(), theme.name))
+        color = theme.button_paused if takeover.paused else theme.button
         control_button.setStyleSheet(f"QPushButton {{ background: {color}; color: white; font-size: 14px; padding: 6px; border-radius: 8px; }}")
         control_button.setVisible(takeover.paused or session.active or takeover.remaining() > 0)
         for window in windows.values():
@@ -311,11 +341,11 @@ def main():
                 window.hide()
         ticks += 1
         if ticks % 30 == 0:
-            state = {"pid": os.getpid(), "enabled": enabled.isChecked(), "active": active,
+            state = {"pid": os.getpid(), "agent": current["agent"], "enabled": enabled.isChecked(), "active": active,
                      "screens": len(windows), "updated_at": time.time(), "label": label,
                      "audio": {name: effect.status().name for name, effect in sounds.items()},
                      "chimes_played": plays, "feedback_session": session.active,
-                     "current_action": session.action_caption() if session.active else None,
+                     "current_action": session.action_caption(theme.name) if session.active else None,
                      "human_monitor_ready": takeover.ready(), "human_paused": takeover.paused,
                      "human_input_held": takeover.held,
                      "safety_wait_seconds": math.ceil(takeover.remaining())}
