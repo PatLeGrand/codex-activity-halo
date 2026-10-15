@@ -268,7 +268,7 @@ def main():
     control_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     control_button.setFixedSize(320, 64)
     def position_control():
-        screen = next((s for s in app.screens() if s.name() == "HDMI-A-1"), app.primaryScreen())
+        screen = app.primaryScreen()
         rect = screen.availableGeometry()
         control_button.move(rect.right() - control_button.width() - 16, rect.top() + 70)
     position_control()

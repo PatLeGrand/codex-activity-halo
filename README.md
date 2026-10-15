@@ -1,11 +1,20 @@
-# Codex Activity Halo
+# Activity Halo — indicateur et garde-fous pour le contrôle d'écran par une IA
 
-Plugin compagnon pour mirsella/computer-use-mcp sous KDE Plasma Wayland.
-Un halo bleu transparent apparaît aux quatre coins de chaque écran pendant
-les appels au bureau. Un badge distingue l’observation du contrôle.
-Avec le proxy de contrôle, le halo reste visible pendant la session et disparaît
-après huit secondes sans action. La surveillance simple du journal conserve
-une indication de 2,5 secondes après chaque appel.
+Compagnon de [mirsella/computer-use-mcp](https://github.com/mirsella/computer-use-mcp)
+sous KDE Plasma Wayland, pour **Claude Code** et **Codex**. Un halo transparent
+apparaît aux quatre coins de chaque écran pendant les appels au bureau, un
+badge distingue l'observation du contrôle, un anneau suit le pointeur, des
+carillons annoncent le début et la fin, et un décompte laisse deux secondes
+pour annuler. Dès que vous touchez le clavier ou la souris, l'agent est
+suspendu. Chaque agent a sa couleur : bleu pour Codex, terracotta pour Claude.
+
+| Guide | Contenu |
+| --- | --- |
+| [docs/INSTALLATION.md](docs/INSTALLATION.md) | Prérequis, installation pas à pas, brancher Claude Code ou Codex, mise à jour, désinstallation |
+| [docs/UTILISATION.md](docs/UTILISATION.md) | Déroulé d'une session, pause et reprise, arrêt d'urgence, variables, dépannage, limites, confidentialité |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Processus, protocole, signal de reprise, ajouter un agent |
+
+Projet non affilié à Anthropic ni à OpenAI. Licence MIT.
 
 Il surveille uniquement les métadonnées du journal local de mirsella.
 Il ne lit pas les captures, les frappes ou le contenu des fenêtres.
@@ -16,7 +25,7 @@ demandé, y compris lorsqu’une action est ensuite refusée.
 
 ## Utilisation
 
-Le serveur MCP lance automatiquement le compagnon. Une icône bleue dans la
+Le serveur MCP lance automatiquement le compagnon. Une icône dans la
 zone de notification permet de prévisualiser, désactiver ou quitter le halo.
 Pour arrêter durablement le lancement automatique, désactiver le plugin
 `activity-halo@patou-local` dans Codex.
@@ -24,7 +33,9 @@ Pour arrêter durablement le lancement automatique, désactiver le plugin
 Le plugin fournit `status` et `preview` (aperçu explicitement étiqueté,
 pendant huit secondes). Il ne contrôle pas le PC.
 
-## Installation
+## Installation du plugin Codex (résumé)
+
+Le guide complet est dans [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 Pré-requis : Python 3, PySide6, KDE avec XWayland et composition activée.
 L’overlay utilise Qt/XWayland avec entrée transparente et sans prise de focus.
@@ -157,78 +168,14 @@ saisie, collage ou attente). Aucun texte saisi, titre de fenêtre ou contenu
 du presse-papiers n’est affiché. Le libellé décrit la commande en cours,
 pas la réussite de son effet dans l’application.
 
-## Utilisation avec Claude (Claude Code)
+## Claude Code
 
-Le même compagnon sert Codex et Claude. Chaque proxy annonce son agent dans la
-requête `begin` (variable `HALO_AGENT`), et l’indicateur adopte son identité :
-nom dans les libellés, icône de la zone de notification, couleurs. Sans champ
-`agent`, ou avec une valeur inconnue, l’aspect reste celui de Codex. Les
-thèmes sont définis dans `theme.py`.
-
-| | Codex | Claude |
-| --- | --- | --- |
-| Halo et anneau du pointeur | bleu `#24AEFF` | terracotta `#D97757` |
-| Badge | fond bleu nuit | fond sombre chaud, texte crème |
-| Pause (vous avez la main) | orange | or `#F4BF43` |
-| Icône de notification | disque bleu | étincelle à huit rayons |
-| Bouton de contrôle | bleu / orange | terracotta `#C15F3C` / or sombre |
-
-L’indicateur est partagé : le dernier agent qui démarre une action fixe
-l’apparence. Un seul processus tourne par utilisateur ; s’il est déjà lancé
-avec l’ancienne version, quittez-le (icône → « Quitter l’indicateur ») pour
-qu’un proxy relance la version à jour. Les proxys déjà ouverts continuent de
-fonctionner, car ils se reconnectent à chaque appel.
-
-### Enregistrer le serveur dans Claude Code
-
-Le portail KDE rattache l’autorisation à l’identité de l’application (le scope
-systemd : `app-com.anthropic.Claude-…` pour Claude, `app-org.chromium.Chromium-…`
-pour Codex dans notre installation). Le jeton de reprise du portail,
-`$XDG_STATE_HOME/computer-use-mcp/portal-restore-token`, ne peut donc pas être
-partagé. Donnez à Claude son propre dossier d’état, puis approuvez l’écran une
-fois :
-
-```bash
-export XDG_STATE_HOME="$HOME/.local/state/claude-computer-use"
-mkdir -p "$XDG_STATE_HOME"
-COMPUTER_USE_MCP_MONITOR=HDMI-A-1 /chemin/vers/computer-use-mcp init
-```
-
-Enregistrez ensuite le proxy de ce dépôt, depuis le projet où Claude Code sera
-lancé (remplacez `HDMI-A-1` par votre écran) :
-
-```bash
-claude mcp add computer_use \
-  -e COMPUTER_USE_MCP_MONITOR=HDMI-A-1 \
-  -e COMPUTER_USE_MCP_SMOOTH_POINTER=1 \
-  -e XDG_STATE_HOME="$HOME/.local/state/claude-computer-use" \
-  -e HALO_AGENT=claude \
-  -- /usr/bin/python3 /chemin/vers/codex-activity-halo/feedback_proxy.py \
-     /chemin/vers/computer-use-mcp mcp --compact-tools
-```
-
-Les outils n’apparaissent qu’au démarrage d’une nouvelle session dans ce
-projet. Les garde-fous sont ceux de Codex : décompte de deux secondes, reprise
-humaine, arrêt Ctrl+Alt+Fin. Le premier appel d’une session échoue avec
-« Control unavailable or paused » tant que la pause n’est pas levée : cliquez
-sur « Reprendre le contrôle Claude » dans le menu de l’icône, puis lâchez le
-clavier et la souris pendant le délai de sécurité.
-
-### Comportements observés
-
-- Les captures sont renvoyées en 1280×720 pour un écran de 1920×1080 ; les
-  coordonnées sont celles de l’image, que le serveur reconvertit exactement.
-  Pour de petites cibles, préférez l’arbre d’accessibilité (`element_id`).
-- Après un `list_desktop`, conservez les identifiants à préfixe de session :
-  ils sont liés à un worker et deviennent invalides s’il est remplacé
-  (`stale_session`). Sans jeton valide pour l’identité de l’application, chaque
-  `observe` échoue ainsi avant de démarrer.
-- Le recadrage `crop: "target_window"` demande
-  `COMPUTER_USE_MCP_KDE_WINDOW_MANAGEMENT=1` et l’interface KWin
-  `org_kde_plasma_window_management`, que KWin réserve aux programmes déclarés
-  via `X-KDE-Wayland-Interfaces` dans un fichier `.desktop`. L’essai a rendu
-  l’interface disponible, mais avec ce mode les identifiants renvoyés par
-  `list_desktop` étaient refusés (`stale_session`) ; il n’est donc pas
-  recommandé avec cette version du serveur.
+Le même compagnon sert Codex et Claude : chaque proxy annonce son agent
+(`HALO_AGENT=claude`) et l'indicateur adopte son nom et ses couleurs, définis
+dans `theme.py`. Sans cette variable, l'aspect reste celui de Codex. Le jeton
+du portail KDE est lié à l'identité de l'application : Claude doit avoir son
+propre `XDG_STATE_HOME`. Commande d'enregistrement, thèmes et comportements
+observés : voir [INSTALLATION.md](docs/INSTALLATION.md#claude-code) et
+[UTILISATION.md](docs/UTILISATION.md).
 
 Tests : `python3 -m unittest -v test_theme.py`.
