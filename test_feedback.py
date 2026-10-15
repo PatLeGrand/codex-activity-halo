@@ -40,3 +40,13 @@ class TimingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ControlCaptionTests(unittest.TestCase):
+    def test_warning_and_pause_labels(self):
+        from feedback import control_caption
+        self.assertEqual(control_caption(False, 1.9), "Codex commence dans 2 s\nAnnuler le démarrage")
+        self.assertEqual(control_caption(False, .9), "Codex commence dans 1 s\nAnnuler le démarrage")
+        self.assertEqual(control_caption(False, 0, 59.1), "Attente de sécurité : 60 s\nAnnuler la reprise")
+        self.assertEqual(control_caption(False, 0), "Arrêter le contrôle Codex")
+        self.assertEqual(control_caption(True, 1.9), "Reprendre le contrôle Codex")
