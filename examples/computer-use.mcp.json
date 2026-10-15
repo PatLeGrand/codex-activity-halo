@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "computer_use": {
+      "command": "/usr/bin/python3",
+      "args": [
+        "/CHEMIN/activity-halo/feedback_proxy.py",
+        "/CHEMIN/computer-use-mcp",
+        "mcp",
+        "--compact-tools"
+      ],
+      "startup_timeout_sec": 40,
+      "tool_timeout_sec": 150,
+      "env_vars": [
+        "DISPLAY",
+        "XAUTHORITY",
+        "WAYLAND_DISPLAY",
+        "DBUS_SESSION_BUS_ADDRESS",
+        "XDG_RUNTIME_DIR",
+        "XDG_SESSION_TYPE",
+        "XDG_CURRENT_DESKTOP",
+        "AT_SPI_BUS_ADDRESS",
+        "ACTIVITY_HALO_MONITOR",
+        "COMPUTER_USE_MCP_MONITOR",
+        "HALO_AGENT",
+        "XDG_STATE_HOME"
+      ],
+      "env": {
+        "COMPUTER_USE_MCP_SMOOTH_POINTER": "1"
+      }
+    }
+  }
+}

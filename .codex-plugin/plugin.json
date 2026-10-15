@@ -1,7 +1,7 @@
 {
   "name": "activity-halo",
-  "version": "0.1.0",
-  "description": "Halo bleu automatique pendant les actions de mirsella sur le bureau KDE.",
+  "version": "0.4.0",
+  "description": "Halo, anneau du pointeur, sons et garde-fous pendant les actions de l’agent sur le bureau KDE (Codex et Claude).",
   "author": {
     "name": "Patou"
   },

@@ -12,7 +12,11 @@
         "WAYLAND_DISPLAY",
         "XDG_RUNTIME_DIR",
         "XDG_STATE_HOME",
-        "DBUS_SESSION_BUS_ADDRESS"
+        "DBUS_SESSION_BUS_ADDRESS",
+        "XAUTHORITY",
+        "ACTIVITY_HALO_MONITOR",
+        "COMPUTER_USE_MCP_MONITOR",
+        "HALO_AGENT"
       ]
     }
   }
