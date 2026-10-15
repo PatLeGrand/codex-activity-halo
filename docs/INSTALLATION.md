@@ -230,7 +230,7 @@ ajoute au besoin les outils `status` et `preview` de l'indicateur :
 
 ```bash
 codex plugin marketplace add "$PWD"
-codex plugin add activity-halo@patou-local
+codex plugin add activity-halo@activity-halo
 ```
 
 Le serveur Computer Use de Codex doit lui aussi passer par le proxy. Voici le
@@ -248,7 +248,7 @@ les chemins et l'écran par les vôtres :
       ],
       "startup_timeout_sec": 40,
       "tool_timeout_sec": 150,
-      "env_vars": ["DISPLAY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS",
+      "env_vars": ["DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS",
                    "XDG_RUNTIME_DIR", "XDG_SESSION_TYPE", "XDG_CURRENT_DESKTOP"],
       "env": {
         "COMPUTER_USE_MCP_MONITOR": "<ÉCRAN>",
@@ -310,7 +310,7 @@ rm ~/.local/share/kglobalaccel/codex-stop.desktop   # puis retirez l'entrée dan
 
 # agent
 claude mcp remove computer_use                      # Claude Code
-# Codex : désactivez le plugin activity-halo@patou-local dans l'application
+# Codex : désactivez le plugin activity-halo@activity-halo dans l'application
 
 # jeton du portail et historique des appels de l'agent
 rm -r ~/.local/state/claude-computer-use

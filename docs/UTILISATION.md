@@ -117,6 +117,7 @@ Du proxy (donc de l'agent) :
 
 | Variable | Rôle |
 | --- | --- |
+| `ACTIVITY_HALO_MONITOR` | Écran du bouton (nom du connecteur) ; à défaut, sélection du moteur ou écran principal KDE |
 | `HALO_AGENT` | `claude` ou `codex` : thème et nom affichés |
 | `XDG_STATE_HOME` | Dossier d'état du serveur : **jeton du portail** et historique des appels. À séparer entre agents |
 | `XDG_RUNTIME_DIR` | Emplacement des sockets et de `status.json` |

@@ -16,6 +16,7 @@ from PySide6.QtCore import Qt, QTimer, QRectF, QPointF, QUrl, QSocketNotifier
 from PySide6.QtGui import QColor, QPainter, QRadialGradient, QFont, QIcon, QPixmap, QCursor, QPen
 from PySide6.QtWidgets import QApplication, QWidget, QSystemTrayIcon, QMenu, QPushButton
 from activity import Activity, runtime_dir
+from display_config import control_screen
 from feedback import Session, control_caption
 from takeover_state import Takeover
 from theme import THEMES, theme_for
@@ -268,12 +269,20 @@ def main():
     control_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     control_button.setFixedSize(320, 64)
     def position_control():
-        screen = app.primaryScreen()
+        screen = control_screen(app.screens(), app.primaryScreen())
+        if screen is None:
+            return
         rect = screen.availableGeometry()
         control_button.move(rect.right() - control_button.width() - 16, rect.top() + 70)
     position_control()
-    for screen in app.screens():
+    def watch_screen(screen):
         screen.availableGeometryChanged.connect(lambda *_: position_control())
+        position_control()
+    for screen in app.screens():
+        watch_screen(screen)
+    app.screenAdded.connect(watch_screen)
+    app.screenRemoved.connect(lambda *_: QTimer.singleShot(0, position_control))
+    app.primaryScreenChanged.connect(lambda *_: position_control())
     def toggle_control():
         if takeover.paused:
             resume_control()
