@@ -37,19 +37,19 @@ class Session:
             return True
         return False
 
-    def action_caption(self):
-        return next(reversed(self.labels.values())) if self.labels else "Codex attend la prochaine action"
+    def action_caption(self, name="Codex"):
+        return next(reversed(self.labels.values())) if self.labels else f"{name} attend la prochaine action"
 
     def countdown(self):
         return max(0, self.armed_at - self.clock()) if self.active else 0
 
 
-def control_caption(paused, countdown, recovery=0):
+def control_caption(paused, countdown, recovery=0, name="Codex"):
     """Keep the actionable button explicit during the warning period."""
     if paused:
-        return "Reprendre le contrôle Codex"
+        return f"Reprendre le contrôle {name}"
     if recovery > 0:
         return f"Attente de sécurité : {math.ceil(recovery)} s\nAnnuler la reprise"
     if countdown > 0:
-        return f"Codex commence dans {math.ceil(countdown)} s\nAnnuler le démarrage"
-    return "Arrêter le contrôle Codex"
+        return f"{name} commence dans {math.ceil(countdown)} s\nAnnuler le démarrage"
+    return f"Arrêter le contrôle {name}"

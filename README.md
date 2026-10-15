@@ -156,3 +156,79 @@ Le proxy annonce uniquement le type d’opération (capture, clic, déplacement,
 saisie, collage ou attente). Aucun texte saisi, titre de fenêtre ou contenu
 du presse-papiers n’est affiché. Le libellé décrit la commande en cours,
 pas la réussite de son effet dans l’application.
+
+## Utilisation avec Claude (Claude Code)
+
+Le même compagnon sert Codex et Claude. Chaque proxy annonce son agent dans la
+requête `begin` (variable `HALO_AGENT`), et l’indicateur adopte son identité :
+nom dans les libellés, icône de la zone de notification, couleurs. Sans champ
+`agent`, ou avec une valeur inconnue, l’aspect reste celui de Codex. Les
+thèmes sont définis dans `theme.py`.
+
+| | Codex | Claude |
+| --- | --- | --- |
+| Halo et anneau du pointeur | bleu `#24AEFF` | terracotta `#D97757` |
+| Badge | fond bleu nuit | fond sombre chaud, texte crème |
+| Pause (vous avez la main) | orange | or `#F4BF43` |
+| Icône de notification | disque bleu | étincelle à huit rayons |
+| Bouton de contrôle | bleu / orange | terracotta `#C15F3C` / or sombre |
+
+L’indicateur est partagé : le dernier agent qui démarre une action fixe
+l’apparence. Un seul processus tourne par utilisateur ; s’il est déjà lancé
+avec l’ancienne version, quittez-le (icône → « Quitter l’indicateur ») pour
+qu’un proxy relance la version à jour. Les proxys déjà ouverts continuent de
+fonctionner, car ils se reconnectent à chaque appel.
+
+### Enregistrer le serveur dans Claude Code
+
+Le portail KDE rattache l’autorisation à l’identité de l’application (le scope
+systemd : `app-com.anthropic.Claude-…` pour Claude, `app-org.chromium.Chromium-…`
+pour Codex dans notre installation). Le jeton de reprise du portail,
+`$XDG_STATE_HOME/computer-use-mcp/portal-restore-token`, ne peut donc pas être
+partagé. Donnez à Claude son propre dossier d’état, puis approuvez l’écran une
+fois :
+
+```bash
+export XDG_STATE_HOME="$HOME/.local/state/claude-computer-use"
+mkdir -p "$XDG_STATE_HOME"
+COMPUTER_USE_MCP_MONITOR=HDMI-A-1 /chemin/vers/computer-use-mcp init
+```
+
+Enregistrez ensuite le proxy de ce dépôt, depuis le projet où Claude Code sera
+lancé (remplacez `HDMI-A-1` par votre écran) :
+
+```bash
+claude mcp add computer_use \
+  -e COMPUTER_USE_MCP_MONITOR=HDMI-A-1 \
+  -e COMPUTER_USE_MCP_SMOOTH_POINTER=1 \
+  -e XDG_STATE_HOME="$HOME/.local/state/claude-computer-use" \
+  -e HALO_AGENT=claude \
+  -- /usr/bin/python3 /chemin/vers/codex-activity-halo/feedback_proxy.py \
+     /chemin/vers/computer-use-mcp mcp --compact-tools
+```
+
+Les outils n’apparaissent qu’au démarrage d’une nouvelle session dans ce
+projet. Les garde-fous sont ceux de Codex : décompte de deux secondes, reprise
+humaine, arrêt Ctrl+Alt+Fin. Le premier appel d’une session échoue avec
+« Control unavailable or paused » tant que la pause n’est pas levée : cliquez
+sur « Reprendre le contrôle Claude » dans le menu de l’icône, puis lâchez le
+clavier et la souris pendant le délai de sécurité.
+
+### Comportements observés
+
+- Les captures sont renvoyées en 1280×720 pour un écran de 1920×1080 ; les
+  coordonnées sont celles de l’image, que le serveur reconvertit exactement.
+  Pour de petites cibles, préférez l’arbre d’accessibilité (`element_id`).
+- Après un `list_desktop`, conservez les identifiants à préfixe de session :
+  ils sont liés à un worker et deviennent invalides s’il est remplacé
+  (`stale_session`). Sans jeton valide pour l’identité de l’application, chaque
+  `observe` échoue ainsi avant de démarrer.
+- Le recadrage `crop: "target_window"` demande
+  `COMPUTER_USE_MCP_KDE_WINDOW_MANAGEMENT=1` et l’interface KWin
+  `org_kde_plasma_window_management`, que KWin réserve aux programmes déclarés
+  via `X-KDE-Wayland-Interfaces` dans un fichier `.desktop`. L’essai a rendu
+  l’interface disponible, mais avec ce mode les identifiants renvoyés par
+  `list_desktop` étaient refusés (`stale_session`) ; il n’est donc pas
+  recommandé avec cette version du serveur.
+
+Tests : `python3 -m unittest -v test_theme.py`.
